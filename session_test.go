@@ -29,7 +29,7 @@ func init() {
 		if err != nil {
 			testLogger.Fatal(err)
 		}
-		session := newSession(conn, 0, nil)
+		session := Server(conn, nil)
 		stream, err := session.Accept()
 		if err != nil {
 			testLogger.Fatal(err)
@@ -63,7 +63,7 @@ func TestEcho(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	session := newSession(conn, 1, nil)
+	session := Client(conn, nil)
 	stream, err := session.Open()
 	if err != nil {
 		t.Fatal(err)
@@ -94,7 +94,7 @@ func TestEchoLarge(t *testing.T) {
 	}
 	final := make([]byte, 0)
 
-	session := newSession(conn, 1, nil)
+	session := Client(conn, nil)
 	stream, err := session.Open()
 	written, err := stream.Write(buf)
 	testLogger.Printf("test_echo_large: wrote %d bytes to handler", written)
