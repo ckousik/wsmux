@@ -7,6 +7,7 @@ import (
 	"time"
 )
 
+// DefaultCapacity is the maximum length the read buffer will accept
 const DefaultCapacity = 1024
 
 var (

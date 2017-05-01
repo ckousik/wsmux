@@ -11,14 +11,14 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-var test_logger *log.Logger
+var testLogger *log.Logger
 
 func init() {
 	file, err := os.Create("test_log")
 	if err != nil {
 		panic(err)
 	}
-	test_logger = log.New(file, "test: ", log.Lshortfile)
+	testLogger = log.New(file, "test: ", log.Lshortfile)
 	upgrader := websocket.Upgrader{
 		ReadBufferSize:  1024,
 		WriteBufferSize: 1024,
@@ -27,17 +27,19 @@ func init() {
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		conn, err := upgrader.Upgrade(w, r, nil)
 		if err != nil {
-			test_logger.Fatal(err)
+			testLogger.Fatal(err)
 		}
 		session := newSession(conn, 0, nil)
 		stream, err := session.Accept()
 		if err != nil {
-			test_logger.Fatal(err)
+			testLogger.Fatal(err)
 		}
 		handleStream(stream)
 	})
 
-	go http.ListenAndServe(":9999", nil)
+	go func() {
+		testLogger.Fatal(http.ListenAndServe(":9999", nil))
+	}()
 }
 
 func handleStream(stream *Stream) {
@@ -45,18 +47,17 @@ func handleStream(stream *Stream) {
 		b := make([]byte, 2048)
 		size, err := stream.Read(b)
 		if err != nil {
-			test_logger.Fatal(err)
+			testLogger.Fatal(err)
 		}
-		test_logger.Print(size, b)
 		b = b[:size]
-		_, err = stream.Write(b)
+		written, err := stream.Write(b)
+		testLogger.Printf("handler: wrote %d bytes", written)
 		if err != nil {
-			test_logger.Fatal(err)
+			testLogger.Fatal(err)
 		}
 	}
 }
 
-/*
 func TestEcho(t *testing.T) {
 	conn, _, err := (&websocket.Dialer{}).Dial("ws://127.0.0.1:9999", nil)
 	if err != nil {
@@ -81,7 +82,6 @@ func TestEcho(t *testing.T) {
 		t.Fatalf("Message not consistent")
 	}
 }
-*/
 
 func TestEchoLarge(t *testing.T) {
 	conn, _, err := (&websocket.Dialer{}).Dial("ws://127.0.0.1:9999", nil)
@@ -92,12 +92,12 @@ func TestEchoLarge(t *testing.T) {
 	for i := 0; i < 1500; i++ {
 		buf = append(buf, byte(5))
 	}
-	final := make([]byte, 100)
+	final := make([]byte, 0)
 
 	session := newSession(conn, 1, nil)
 	stream, err := session.Open()
 	written, err := stream.Write(buf)
-	test_logger.Printf("wrote %d bytes to remote", written)
+	testLogger.Printf("test_echo_large: wrote %d bytes to handler", written)
 	read := 0
 	for read != written {
 		catch := make([]byte, 100)
@@ -107,6 +107,7 @@ func TestEchoLarge(t *testing.T) {
 		}
 		catch = catch[:size]
 		final = append(final, catch...)
+		testLogger.Printf("test_echo_large: received total %d bytes from handler", len(final))
 		read += size
 	}
 

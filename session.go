@@ -136,7 +136,7 @@ func (s *Session) recvLoop() {
 			stream := s.streams[streamID]
 			s.streamLock.Unlock()
 			if stream == nil {
-				s.logger.Printf("DAT packet for unknown stream with id %d dropped")
+				s.logger.Printf("DAT packet for unknown stream with id %d dropped", streamID)
 			}
 			buf, err := ioutil.ReadAll(msgReader)
 			err = stream.write(buf)
@@ -187,7 +187,7 @@ func (s *Session) Open() (*Stream, error) {
 
 	atomic.AddUint32(&s.nextID, 2)
 	if s.nextID == s.nextID%2 {
-		s.Close()
+		_ = s.Close()
 		return nil, errRemoteClosed
 	}
 
@@ -199,6 +199,7 @@ func (s *Session) Open() (*Stream, error) {
 	return stream, nil
 }
 
+// Close ...
 func (s *Session) Close() error {
 	if s.closed {
 		return errBrokenPipe
